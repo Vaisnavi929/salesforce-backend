@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "SalesforceCrudBackendApplication",
+            "request": "launch",
+            "mainClass": "com.salesforce.backend.SalesforceCrudBackendApplication",
+            "projectName": "backend",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
