@@ -5,6 +5,7 @@ import com.salesforce.backend.service.SalesforceOAuthService;
 
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,32 +23,70 @@ public class AuthController {
 
     private final SalesforceOAuthService salesforceOAuthService;
 
-    public AuthController(SalesforceOAuthService salesforceOAuthService) {
-        this.salesforceOAuthService = salesforceOAuthService;
+    /*
+     * Frontend URL is configurable through environment variables.
+     *
+     * Local:
+     * http://localhost:5173
+     *
+     * Production:
+     * https://salesforce-frontend-hzy9.onrender.com
+     */
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
+
+    public AuthController(
+            SalesforceOAuthService salesforceOAuthService
+    ) {
+        this.salesforceOAuthService =
+                salesforceOAuthService;
     }
 
     /**
-     *
      * Browser:
      * http://localhost:8080/auth/login
      *
      * This endpoint redirects the user to Salesforce.
      */
     @GetMapping("/login")
-    public ResponseEntity<Void> login(HttpSession session) {
+    public ResponseEntity<Void> login(
+            HttpSession session
+    ) {
 
         String authorizationUrl =
-                salesforceOAuthService.createAuthorizationUrl(session);
+                salesforceOAuthService
+                        .createAuthorizationUrl(session);
 
-        System.out.println("==========================================");
-        System.out.println("Starting Salesforce OAuth");
-        System.out.println("Session ID: " + session.getId());
-        System.out.println("Authorization URL:");
-        System.out.println(authorizationUrl);
-        System.out.println("==========================================");
+        System.out.println(
+                "=========================================="
+        );
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(URI.create(authorizationUrl));
+        System.out.println(
+                "Starting Salesforce OAuth"
+        );
+
+        System.out.println(
+                "Session ID: " + session.getId()
+        );
+
+        System.out.println(
+                "Authorization URL:"
+        );
+
+        System.out.println(
+                authorizationUrl
+        );
+
+        System.out.println(
+                "=========================================="
+        );
+
+        HttpHeaders headers =
+                new HttpHeaders();
+
+        headers.setLocation(
+                URI.create(authorizationUrl)
+        );
 
         return ResponseEntity
                 .status(302)
@@ -57,40 +96,98 @@ public class AuthController {
 
     /**
      * Salesforce OAuth callback.
-
      */
     @GetMapping("/callback")
     public ResponseEntity<?> callback(
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String state,
-            @RequestParam(required = false) String error,
+
+            @RequestParam(
+                    required = false
+            )
+            String code,
+
+            @RequestParam(
+                    required = false
+            )
+            String state,
+
+            @RequestParam(
+                    required = false
+            )
+            String error,
+
             @RequestParam(
                     name = "error_description",
                     required = false
-            ) String errorDescription,
+            )
+            String errorDescription,
+
             HttpSession session
     ) {
 
         System.out.println();
-        System.out.println("==========================================");
-        System.out.println("SALESFORCE OAUTH CALLBACK");
-        System.out.println("==========================================");
-        System.out.println("Session ID       : " + session.getId());
-        System.out.println("Authorization Code: " + code);
-        System.out.println("State            : " + state);
-        System.out.println("Error            : " + error);
-        System.out.println("Error Description: " + errorDescription);
-        System.out.println("==========================================");
+
+        System.out.println(
+                "=========================================="
+        );
+
+        System.out.println(
+                "SALESFORCE OAUTH CALLBACK"
+        );
+
+        System.out.println(
+                "=========================================="
+        );
+
+        System.out.println(
+                "Session ID       : "
+                        + session.getId()
+        );
+
+        System.out.println(
+                "Authorization Code: "
+                        + code
+        );
+
+        System.out.println(
+                "State            : "
+                        + state
+        );
+
+        System.out.println(
+                "Error            : "
+                        + error
+        );
+
+        System.out.println(
+                "Error Description: "
+                        + errorDescription
+        );
+
+        System.out.println(
+                "=========================================="
+        );
 
         /*
          * Salesforce rejected the authorization request.
          */
-        if (error != null && !error.isBlank()) {
+        if (
+                error != null
+                        && !error.isBlank()
+        ) {
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response =
+                    new HashMap<>();
 
-            response.put("success", false);
-            response.put("error", error);
+            response.put(
+                    "success",
+                    false
+            );
+
+            response.put(
+                    "error",
+                    error
+            );
+
             response.put(
                     "error_description",
                     errorDescription != null
@@ -107,15 +204,24 @@ public class AuthController {
          * Callback was opened directly or Salesforce did not
          * provide an authorization code.
          */
-        if (code == null || code.isBlank()) {
+        if (
+                code == null
+                        || code.isBlank()
+        ) {
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response =
+                    new HashMap<>();
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
+
             response.put(
                     "error",
                     "Authorization code is missing"
             );
+
             response.put(
                     "message",
                     "Do not open /auth/callback directly. "
@@ -137,15 +243,24 @@ public class AuthController {
                         "salesforce_oauth_state"
                 );
 
-        if (savedState == null || savedState.isBlank()) {
+        if (
+                savedState == null
+                        || savedState.isBlank()
+        ) {
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response =
+                    new HashMap<>();
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
+
             response.put(
                     "error",
                     "OAuth state is missing"
             );
+
             response.put(
                     "message",
                     "The OAuth session may have expired. "
@@ -159,13 +274,28 @@ public class AuthController {
 
         if (!savedState.equals(state)) {
 
-            System.out.println("OAuth STATE VALIDATION FAILED");
-            System.out.println("Expected state: " + savedState);
-            System.out.println("Received state: " + state);
+            System.out.println(
+                    "OAuth STATE VALIDATION FAILED"
+            );
 
-            Map<String, Object> response = new HashMap<>();
+            System.out.println(
+                    "Expected state: "
+                            + savedState
+            );
 
-            response.put("success", false);
+            System.out.println(
+                    "Received state: "
+                            + state
+            );
+
+            Map<String, Object> response =
+                    new HashMap<>();
+
+            response.put(
+                    "success",
+                    false
+            );
+
             response.put(
                     "error",
                     "Invalid OAuth state"
@@ -184,15 +314,24 @@ public class AuthController {
                         "salesforce_code_verifier"
                 );
 
-        if (codeVerifier == null || codeVerifier.isBlank()) {
+        if (
+                codeVerifier == null
+                        || codeVerifier.isBlank()
+        ) {
 
-            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response =
+                    new HashMap<>();
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
+
             response.put(
                     "error",
                     "PKCE code verifier is missing"
             );
+
             response.put(
                     "message",
                     "The OAuth session is invalid or expired. "
@@ -211,14 +350,16 @@ public class AuthController {
              * access token.
              */
             System.out.println(
-                    "Exchanging authorization code for Salesforce token..."
+                    "Exchanging authorization code "
+                            + "for Salesforce token..."
             );
 
             JsonNode tokenResponse =
-                    salesforceOAuthService.exchangeCodeForToken(
-                            code,
-                            codeVerifier
-                    );
+                    salesforceOAuthService
+                            .exchangeCodeForToken(
+                                    code,
+                                    codeVerifier
+                            );
 
             System.out.println(
                     "Salesforce token response received."
@@ -235,10 +376,14 @@ public class AuthController {
                                 .asText();
 
                 String tokenErrorDescription =
-                        tokenResponse.has("error_description")
+                        tokenResponse.has(
+                                "error_description"
+                        )
                                 ? tokenResponse
-                                    .get("error_description")
-                                    .asText()
+                                        .get(
+                                                "error_description"
+                                        )
+                                        .asText()
                                 : "Salesforce token exchange failed";
 
                 System.out.println(
@@ -254,8 +399,16 @@ public class AuthController {
                 Map<String, Object> response =
                         new HashMap<>();
 
-                response.put("success", false);
-                response.put("error", tokenError);
+                response.put(
+                        "success",
+                        false
+                );
+
+                response.put(
+                        "error",
+                        tokenError
+                );
+
                 response.put(
                         "error_description",
                         tokenErrorDescription
@@ -269,20 +422,31 @@ public class AuthController {
             /*
              * Access token is mandatory.
              */
-            if (!tokenResponse.has("access_token")
-                    || tokenResponse
-                    .get("access_token")
-                    .asText()
-                    .isBlank()) {
+            if (
+                    !tokenResponse.has(
+                            "access_token"
+                    )
+                            || tokenResponse
+                                    .get(
+                                            "access_token"
+                                    )
+                                    .asText()
+                                    .isBlank()
+            ) {
 
                 Map<String, Object> response =
                         new HashMap<>();
 
-                response.put("success", false);
+                response.put(
+                        "success",
+                        false
+                );
+
                 response.put(
                         "error",
                         "Salesforce access token was not returned"
                 );
+
                 response.put(
                         "token_response",
                         tokenResponse
@@ -308,9 +472,12 @@ public class AuthController {
 
             /*
              * Save Salesforce instance URL.
-             *
              */
-            if (tokenResponse.has("instance_url")) {
+            if (
+                    tokenResponse.has(
+                            "instance_url"
+                    )
+            ) {
 
                 String instanceUrl =
                         tokenResponse
@@ -331,12 +498,18 @@ public class AuthController {
             /*
              * Save refresh token if Salesforce returns one.
              */
-            if (tokenResponse.has("refresh_token")) {
+            if (
+                    tokenResponse.has(
+                            "refresh_token"
+                    )
+            ) {
 
                 session.setAttribute(
                         "salesforce_refresh_token",
                         tokenResponse
-                                .get("refresh_token")
+                                .get(
+                                        "refresh_token"
+                                )
                                 .asText()
                 );
 
@@ -360,35 +533,60 @@ public class AuthController {
             );
 
             System.out.println();
+
             System.out.println(
                     "=========================================="
             );
+
             System.out.println(
                     "SALESFORCE LOGIN SUCCESSFUL"
             );
+
             System.out.println(
-                    "Session ID: " + session.getId()
+                    "Session ID: "
+                            + session.getId()
             );
+
             System.out.println(
                     "Access token stored in session."
             );
+
+            System.out.println(
+                    "Frontend URL: "
+                            + frontendUrl
+            );
+
             System.out.println(
                     "Redirecting to React..."
             );
+
             System.out.println(
                     "=========================================="
             );
+
             System.out.println();
 
             /*
              * Redirect user back to React.
-             * This must be http://localhost:5173/
-             * and NOT /auth/callback.
+             *
+             * Local:
+             * http://localhost:5173/
+             *
+             * Production:
+             * https://salesforce-frontend-hzy9.onrender.com/
+             *
+             * The value comes from FRONTEND_URL.
              */
-            HttpHeaders headers = new HttpHeaders();
+            String redirectUrl =
+                    frontendUrl.endsWith("/")
+                            ? frontendUrl
+                            : frontendUrl + "/";
+
+            HttpHeaders headers =
+                    new HttpHeaders();
 
             headers.setLocation(
-                    URI.create("http://localhost:5173/")
+                    URI.create(redirectUrl)
             );
 
             return ResponseEntity
@@ -403,11 +601,16 @@ public class AuthController {
             Map<String, Object> response =
                     new HashMap<>();
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
+
             response.put(
                     "error",
                     "Salesforce OAuth token exchange failed"
             );
+
             response.put(
                     "message",
                     e.getMessage()
@@ -461,7 +664,9 @@ public class AuthController {
             );
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     /**
@@ -495,6 +700,8 @@ public class AuthController {
                 "Logged out successfully"
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 }
